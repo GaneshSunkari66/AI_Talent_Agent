@@ -1,115 +1,103 @@
 import streamlit as st
 import json
-import os
 from openai import OpenAI
 
-# 🔐API key (environment variable use karo)
-client = OpenAI(api_key='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')
+# ⚠️ Use env variable later (not hardcoded)
+client = OpenAI(api_key="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")
 
-# Load candidates
+# Load data
 with open("candidates.json") as f:
     candidates = json.load(f)
 
-st.title("🤖 AI Talent Scouting Agent")
+# ---------------- CUSTOM CSS ----------------
+st.markdown("""
+<style>
+body {
+    background-color: #0f172a;
+}
+.main-title {
+    text-align: center;
+    font-size: 40px;
+    color: #38bdf8;
+    font-weight: bold;
+}
+.card {
+    background-color: #1e293b;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+}
+.score {
+    font-size: 18px;
+    color: #22c55e;
+}
+</style>
+""", unsafe_allow_html=True)
 
-jd_input = st.text_area("Paste Job Description")
+# ---------------- HEADER ----------------
+st.markdown('<div class="main-title">🤖 AI Talent Agent</div>', unsafe_allow_html=True)
 
+jd_input = st.text_area("📄 Enter Job Description")
 
-# -------------------------------
-# ✅ Cached AI Skill Extraction
-# -------------------------------
-@st.cache_data(show_spinner=False)
-def extract_skills_ai(jd):
-    try:
-        prompt = f"""
-        Extract key technical skills from the following job description.
-        Return only a comma-separated list.
-
-        JD:
-        {jd}
-        """
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0
-        )
-
-        skills = response.choices[0].message.content
-        return [s.strip() for s in skills.split(",")]
-
-    except Exception:
-        # 🔁 Fallback (no API crash)
-        return extract_skills_basic(jd)
-
-
-# -------------------------------
-# ✅ FREE fallback (no API)
-# -------------------------------
+# ---------------- FUNCTIONS ----------------
 def extract_skills_basic(text):
     keywords = ["python", "sql", "machine learning", "java", "aws", "react"]
     return [k for k in keywords if k in text.lower()]
 
-
-# -------------------------------
-# ✅ Replace with rule-based logic
-# -------------------------------
-def simulate_interest(candidate, jd_skills):
-    common = set(candidate["skills"]).intersection(set(jd_skills))
-
-    if len(common) >= 3:
-        return 85, "Yes, I am very interested in this role."
-    elif len(common) == 2:
-        return 65, "Maybe, this role looks interesting."
-    else:
-        return 45, "Not very interested."
-
-
-# -------------------------------
-# Match Score
-# -------------------------------
 def calculate_match(candidate_skills, jd_skills):
     if not jd_skills:
         return 0
     common = set(candidate_skills).intersection(set(jd_skills))
     return (len(common) / len(jd_skills)) * 100
 
+def simulate_interest(candidate, jd_skills):
+    common = set(candidate["skills"]).intersection(set(jd_skills))
 
-# -------------------------------
-# 🚀 Run
-# -------------------------------
-if st.button("Find Candidates"):
-
-    if jd_input.strip() == "":
-        st.warning("Please enter a job description")
-
+    if len(common) >= 3:
+        return 85, "Highly interested"
+    elif len(common) == 2:
+        return 65, "Moderately interested"
     else:
-        with st.spinner("Analyzing candidates..."):
+        return 45, "Less interested"
 
-            jd_skills = extract_skills_ai(jd_input)
+# ---------------- BUTTON ----------------
+if st.button("🚀 Find Candidates"):
 
-            results = []
+    jd_skills = extract_skills_basic(jd_input)
 
-            for candidate in candidates:
-                match_score = calculate_match(candidate["skills"], jd_skills)
+    results = []
 
-                # ✅ No API call here
-                interest_score, reply = simulate_interest(candidate, jd_skills)
+    for c in candidates:
+        match = calculate_match(c["skills"], jd_skills)
+        interest, msg = simulate_interest(c, jd_skills)
+        final = (0.7 * match) + (0.3 * interest)
 
-                final_score = (0.7 * match_score) + (0.3 * interest_score)
+        results.append({
+            "name": c["name"],
+            "skills": c["skills"],
+            "match": match,
+            "interest": interest,
+            "final": final,
+            "msg": msg
+        })
 
-                results.append({
-                    "Name": candidate["name"],
-                    "Match Score": round(match_score, 2),
-                    "Interest Score": interest_score,
-                    "Final Score": round(final_score, 2),
-                    "AI Response": reply
-                })
+    results = sorted(results, key=lambda x: x["final"], reverse=True)
 
-            results = sorted(results, key=lambda x: x["Final Score"], reverse=True)
+    # ---------------- OUTPUT UI ----------------
+    st.markdown("## 🏆 Top Candidates")
 
-        st.subheader("🏆 Ranked Candidates")
-        st.table(results)
+    for r in results:
+        st.markdown(f"""
+        <div class="card">
+            <h3>👤 {r['name']}</h3>
+            <p><b>Skills:</b> {", ".join(r['skills'])}</p>
+            <p class="score">Match Score: {round(r['match'],2)}%</p>
+            <p class="score">Interest Score: {r['interest']}%</p>
+            <p class="score">Final Score: {round(r['final'],2)}%</p>
+            <p>💬 {r['msg']}</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.subheader("🔍 Extracted Skills")
-        st.write(jd_skills)
+    st.markdown("### 🔍 Extracted Skills")
+    st.write(jd_skills)
