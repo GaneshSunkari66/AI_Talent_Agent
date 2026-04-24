@@ -3,8 +3,8 @@ import json
 import os
 from openai import OpenAI
 
-# 🔐 सुरक्षित API key (environment variable use karo)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# 🔐API key (environment variable use karo)
+client = OpenAI(api_key='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')
 
 # Load candidates
 with open("candidates.json") as f:
