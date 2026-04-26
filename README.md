@@ -58,3 +58,41 @@ git clone  cd ai-talent-agent
 pip install -r requirements.txt
 ### 4. Run App
 Streamlit run app.py
+---
+
+## 🌐 Deployment
+Deployed using Streamlit Cloud:
+👉 (https://aiagentforrecruiters.streamlit.app/)
+\
+---
+
+## 📊 Sample Input
+Looking for Senior Software Engineer with skills "Python", "Django", "REST APIs", "PostgreSQL", "AWS", "Docker", "Kubernetes", "Redis", "CI/CD", "Microservices"
+---
+
+## 📈 Sample Output
+- Ranked list of candidates
+- Match Score
+- Interest Score
+- AI-generated response
+
+---
+
+## 🎥 Demo Video
+👉 (https://drive.google.com/file/d/1SwHJTp7fN2PZ4kzQxviw4v46p7htymqB/view?usp=sharing)
+
+---
+
+## 🔗 GitHub Repository
+👉 (https://github.com/GaneshSunkari66/AI_Talent_Agent)
+
+---
+
+## 💡 Future Improvements
+- Real-time candidate scraping (LinkedIn APIs)
+- Resume parsing
+- Advanced ML-based scoring
+---
+
+## 👤 Author
+Ganesh Sunkari
